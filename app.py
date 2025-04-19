@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text  # only need this once
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
@@ -10,16 +11,17 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- Clean reset of user table ---
+# ✅ Clean reset of user table with wrapped SQL
 with app.app_context():
     try:
-        db.session.execute('DROP TABLE IF EXISTS "user" CASCADE;')
+        db.session.execute(text('DROP TABLE IF EXISTS "user" CASCADE;'))
         db.session.commit()
+        print("🧹 Dropped user table")
     except Exception as e:
         print(f"⚠️ Failed to drop table: {e}")
 
     try:
-        db.session.execute('''
+        db.session.execute(text('''
             CREATE TABLE "user" (
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(80) UNIQUE NOT NULL,
@@ -27,7 +29,7 @@ with app.app_context():
                 role VARCHAR(20),
                 rep_notes TEXT
             );
-        ''')
+        '''))
         db.session.commit()
         print("✅ User table recreated.")
     except Exception as e:
