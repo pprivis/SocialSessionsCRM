@@ -153,6 +153,15 @@ def patch_rep_notes_column():
     except Exception as e:
         return f"⚠️ Error: {e}"
 
+@app.route("/patch_rep_notes")
+def patch_rep_notes_column():
+    try:
+        db.session.execute('ALTER TABLE "user" ADD COLUMN rep_notes TEXT;')
+        db.session.commit()
+        return "✅ rep_notes column added!"
+    except Exception as e:
+        return f"⚠️ Error: {e}"
+
 # ... (your contact/task/note/order/pop/export/backup routes stay unchanged) ...
 
 if __name__ == '__main__':
