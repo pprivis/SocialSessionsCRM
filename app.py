@@ -162,6 +162,15 @@ def patch_rep_notes_column():
     except Exception as e:
         return f"⚠️ Error: {e}"
 
+@app.route("/reset_users_table")
+def reset_users_table():
+    try:
+        User.__table__.drop(db.engine)
+        User.__table__.create(db.engine)
+        return "✅ User table dropped and recreated successfully."
+    except Exception as e:
+        return f"⚠️ Error resetting user table: {e}"
+
 # ... (your contact/task/note/order/pop/export/backup routes stay unchanged) ...
 
 if __name__ == '__main__':
