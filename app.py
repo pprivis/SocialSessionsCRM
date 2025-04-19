@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
@@ -10,7 +9,29 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///crm
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+
+# --- Clean reset of user table ---
+with app.app_context():
+    try:
+        db.session.execute('DROP TABLE IF EXISTS "user" CASCADE;')
+        db.session.commit()
+    except Exception as e:
+        print(f"⚠️ Failed to drop table: {e}")
+
+    try:
+        db.session.execute('''
+            CREATE TABLE "user" (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(80) UNIQUE NOT NULL,
+                password_hash VARCHAR(128),
+                role VARCHAR(20),
+                rep_notes TEXT
+            );
+        ''')
+        db.session.commit()
+        print("✅ User table recreated.")
+    except Exception as e:
+        print(f"❌ Failed to create user table: {e}")
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -65,5 +86,6 @@ def add_test_users():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
