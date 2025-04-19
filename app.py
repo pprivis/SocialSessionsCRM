@@ -80,11 +80,16 @@ def add_test_users():
     ]
     for u in users:
         if not User.query.filter_by(username=u["username"]).first():
-            user = User(username=u["username"], role=u["role"])
+            user = User(
+                username=u["username"],
+                role=u["role"],
+                rep_notes=""  # 👈 fixes the NoneType insert issue
+            )
             user.set_password(u["password"])
             db.session.add(user)
     db.session.commit()
     return "✅ Test users created."
+
 
 if __name__ == "__main__":
     app.run(debug=True)
