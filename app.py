@@ -153,14 +153,6 @@ def patch_rep_notes_column():
     except Exception as e:
         return f"⚠️ Error: {e}"
 
-@app.route("/patch_rep_notes")
-def patch_rep_notes_column():
-    try:
-        db.session.execute('ALTER TABLE "user" ADD COLUMN rep_notes TEXT;')
-        db.session.commit()
-        return "✅ rep_notes column added!"
-    except Exception as e:
-        return f"⚠️ Error: {e}"
 
 @app.route("/reset_users_table")
 def reset_users_table():
