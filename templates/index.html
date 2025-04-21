@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .overdue { background-color: #fee2e2; }        /* red */
-    .due_today { background-color: #fef9c3; }       /* yellow */
-    .due_soon { background-color: #e0f2fe; }        /* blue */
+    .overdue { background-color: #fee2e2; }
+    .due_today { background-color: #fef9c3; }
+    .due_soon { background-color: #e0f2fe; }
   </style>
   <script>
     function toggleEdit(id) {
@@ -28,66 +28,58 @@
     <h1 class="text-2xl font-bold text-purple-700">Social Sessions CRM</h1>
     <div class="space-x-3 mt-2 sm:mt-0">
       <a href="/" class="text-sm text-purple-700 hover:underline">Dashboard</a>
-      <a href="/?show_archived=0" class="text-sm text-purple-700 hover:underline">Contacts</a>
       {% if role == 'admin' %}
-      <a href="/?show_archived=1" class="text-sm text-purple-700 hover:underline">Archived</a>
-      {% endif %}
-      <a href="#leaderboard" class="text-sm text-purple-700 hover:underline">Leaderboard</a>
-      {% if role == 'admin' %}
-      <a href="/export_csv" class="text-sm text-purple-700 hover:underline">Export CSV</a>
+      <a href="/export" class="text-sm text-purple-700 hover:underline">Export CSV</a>
+      <a href="/backup" class="text-sm text-purple-700 hover:underline">Download Backup</a>
       {% endif %}
       <a href="{{ url_for('logout') }}" class="text-sm text-red-600 hover:underline">Logout</a>
-
     </div>
   </nav>
 
-  <!-- 🔍 DASHBOARD -->
+  <!-- 📊 DASHBOARD METRICS -->
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="bg-white p-4 rounded shadow text-center">
       <p class="text-xs text-gray-500">📇 Total Contacts</p>
-      <p class="text-xl font-bold">{{ dashboard.total_contacts }}</p>
+      <p class="text-xl font-bold">{{ metrics.total_contacts }}</p>
     </div>
     <div class="bg-white p-4 rounded shadow text-center">
       <p class="text-xs text-gray-500">📅 Due Today</p>
-      <p class="text-xl font-bold">{{ dashboard.tasks_due_today }}</p>
+      <p class="text-xl font-bold">{{ metrics.tasks_due_today }}</p>
     </div>
     <div class="bg-white p-4 rounded shadow text-center">
       <p class="text-xs text-gray-500">⏳ Due Soon</p>
-      <p class="text-xl font-bold">{{ dashboard.tasks_due_soon }}</p>
+      <p class="text-xl font-bold">{{ metrics.tasks_due_soon }}</p>
     </div>
     <div class="bg-white p-4 rounded shadow text-center">
       <p class="text-xs text-gray-500">⚠️ Overdue</p>
-      <p class="text-xl font-bold">{{ dashboard.overdue }}</p>
+      <p class="text-xl font-bold">{{ metrics.overdue }}</p>
     </div>
   </div>
 
   <!-- 📇 CONTACT CARDS -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     {% for contact in contacts %}
-    <div id="contact-{{ contact.id }}" class="bg-white rounded-xl p-4 shadow space-y-2 {% if contact.archived %}opacity-60{% endif %}">
-
-      <!-- 👁️ VIEW MODE -->
+    <div id="contact-{{ contact.id }}" class="bg-white rounded-xl p-4 shadow space-y-2">
+      <!-- VIEW MODE -->
       <div class="view-mode space-y-1">
         <h2 class="text-lg font-bold">{{ contact.name }}</h2>
         <p class="text-sm">📧 {{ contact.email }} | 📱 {{ contact.phone }}</p>
+        <p class="text-sm text-gray-600">Rep: {{ contact.rep }}</p>
         <p class="text-sm text-gray-600">Tags: {{ contact.tags }}</p>
-        <p class="text-sm text-gray-600">Rep: {{ contact.rep or 'Unassigned' }}</p>
         <p class="text-sm text-gray-600">Notes: {{ contact.notes }}</p>
         <button onclick="toggleEdit({{ contact.id }})" class="text-xs text-blue-600 hover:underline">Edit</button>
         {% if role == 'admin' %}
-          <a href="{{ url_for('toggle_archive', id=contact.id) }}" class="text-xs text-red-600 hover:underline ml-4">
-            {{ "Unarchive" if contact.archived else "Archive" }}
-          </a>
+          <a href="{{ url_for('delete_contact', contact_id=contact.id) }}" class="text-xs text-red-600 hover:underline ml-4">Delete</a>
         {% endif %}
       </div>
 
-      <!-- ✏️ EDIT MODE -->
-      <form method="post" action="{{ url_for('update_contact', id=contact.id) }}" class="edit-mode hidden space-y-2">
+      <!-- EDIT MODE -->
+      <form method="POST" action="{{ url_for('update_contact', contact_id=contact.id) }}" class="edit-mode hidden space-y-2">
         <input name="name" value="{{ contact.name }}" class="w-full px-2 py-1 border rounded" />
         <input name="email" value="{{ contact.email }}" class="w-full px-2 py-1 border rounded" />
         <input name="phone" value="{{ contact.phone }}" class="w-full px-2 py-1 border rounded" />
-        <input name="tags" value="{{ contact.tags }}" class="w-full px-2 py-1 border rounded" />
         <input name="rep" value="{{ contact.rep }}" class="w-full px-2 py-1 border rounded" />
+        <input name="tags" value="{{ contact.tags }}" class="w-full px-2 py-1 border rounded" />
         <textarea name="notes" class="w-full px-2 py-1 border rounded">{{ contact.notes }}</textarea>
         <div class="flex justify-between">
           <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded">Save</button>
@@ -95,51 +87,24 @@
         </div>
       </form>
 
-      <!-- ✅ TASKS -->
-      <form method="post" action="{{ url_for('add_task', contact_id=contact.id) }}" class="space-y-2">
-        <input name="task" placeholder="New task..." class="w-full px-2 py-1 text-sm border rounded" />
+      <!-- TASKS -->
+      <form method="POST" action="{{ url_for('add_task', contact_id=contact.id) }}" class="space-y-2">
+        <input name="title" placeholder="New task..." class="w-full px-2 py-1 text-sm border rounded" />
         <input name="due_date" type="date" class="w-full px-2 py-1 text-sm border rounded" />
         <button type="submit" class="bg-purple-600 text-white text-xs px-3 py-1 rounded">Add Task</button>
       </form>
       {% for task in contact.tasks %}
-      <div class="text-sm px-2 py-1 border rounded {{ get_task_status(task) }}">
-        {{ task.task }} {% if task.due_date %}(due {{ task.due_date }}){% endif %}
-        {% if not task.completed %}
-        <a href="{{ url_for('complete_task', task_id=task.id) }}" class="text-green-600 ml-2 hover:underline">✓</a>
-        {% endif %}
-        <a href="{{ url_for('delete_task', task_id=task.id) }}" class="text-red-600 ml-2 hover:underline">✕</a>
+      <div class="text-sm px-2 py-1 border rounded {{ task.status }}">
+        {{ task.title }} (due {{ task.due_date }}) - {{ task.status }}
+        <form method="POST" action="{{ url_for('update_task_status', task_id=task.id) }}">
+          <select name="status" onchange="this.form.submit()" class="text-xs">
+            <option {% if task.status == 'pending' %}selected{% endif %}>pending</option>
+            <option {% if task.status == 'completed' %}selected{% endif %}>completed</option>
+          </select>
+        </form>
       </div>
       {% endfor %}
 
-      <!-- 💬 NOTES -->
-      <form method="post" action="{{ url_for('add_note', contact_id=contact.id) }}" class="space-y-2">
-        <textarea name="note" rows="2" class="w-full px-2 py-1 text-sm border rounded" placeholder="Add a note..."></textarea>
-        <button type="submit" class="bg-gray-700 text-white text-xs px-3 py-1 rounded">Add Note</button>
-      </form>
-      {% for note in contact.interactions %}
-      <div class="text-xs text-gray-600 mt-1">
-        {{ note.timestamp.strftime('%b %d, %Y') }}: {{ note.note }}
-      </div>
-      {% endfor %}
-
-      <!-- 🧾 ORDER LOG -->
-      <form method="post" action="{{ url_for('add_order', contact_id=contact.id) }}" class="space-y-2">
-        <input name="order_date" type="date" class="w-full px-2 py-1 text-sm border rounded" />
-        <button type="submit" class="bg-blue-600 text-white text-xs px-3 py-1 rounded">Add Order</button>
-      </form>
-      {% for order in contact.orders %}
-      <div class="text-xs text-gray-600">Order: {{ order.order_date }}</div>
-      {% endfor %}
-
-      <!-- 📦 POP MATERIALS -->
-      <form method="post" action="{{ url_for('add_pop', contact_id=contact.id) }}" class="space-y-2">
-        <input name="material" placeholder="Material name" class="w-full px-2 py-1 text-sm border rounded" />
-        <input name="sent_date" type="date" class="w-full px-2 py-1 text-sm border rounded" />
-        <button type="submit" class="bg-indigo-600 text-white text-xs px-3 py-1 rounded">Add P.O.P.</button>
-      </form>
-      {% for pop in contact.pops %}
-      <div class="text-xs text-gray-600">📦 {{ pop.material }} (sent {{ pop.sent_date }})</div>
-      {% endfor %}
     </div>
     {% endfor %}
   </div>
@@ -148,34 +113,16 @@
   <div id="leaderboard" class="mt-12 bg-white p-6 rounded-xl shadow space-y-6">
     <h2 class="text-xl font-semibold mb-2 text-purple-700">Rep Leaderboard</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {% set top_contacts = leaderboard | max(attribute='total_contacts') %}
-      {% set top_completed = leaderboard | max(attribute='completed_tasks') %}
-      {% set top_overdue = leaderboard | max(attribute='overdue_tasks') %}
-
       {% for rep in leaderboard %}
-      <div class="p-4 border rounded-lg shadow-sm bg-gradient-to-br from-white to-purple-50 hover:from-purple-100 space-y-2">
-        <h3 class="text-lg font-bold flex justify-between items-center">
-          {{ rep.rep }}
-          {% if rep.total_contacts == top_contacts.total_contacts %}
-          <span class="text-yellow-500 text-xl">👑</span>
-          {% endif %}
-        </h3>
+      <div class="p-4 border rounded-lg shadow-sm bg-gradient-to-br from-white to-purple-50">
+        <h3 class="text-lg font-bold">{{ rep.rep }}</h3>
         <p class="text-sm">📇 Contacts: {{ rep.total_contacts }}</p>
         <p class="text-sm">✅ Completed: {{ rep.completed_tasks }}</p>
         <p class="text-sm">⚠️ Overdue: {{ rep.overdue_tasks }}</p>
-
-        {% if role == 'admin' %}
-        <form method="post" action="{{ url_for('update_rep_note', rep_name=rep.rep) }}" class="space-y-2">
-          <textarea name="note" rows="2" class="w-full text-sm p-2 border rounded">{{ rep_notes[rep.rep].note }}</textarea>
-          <button type="submit" class="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700">Save Note</button>
-        </form>
-        {% endif %}
-        {% if rep_notes[rep.rep].updated_at %}
-        <p class="text-xs text-gray-500">Last updated: {{ rep_notes[rep.rep].updated_at }}</p>
-        {% endif %}
       </div>
       {% endfor %}
     </div>
   </div>
+
 </body>
 </html>
