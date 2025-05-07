@@ -1,70 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
-import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_secret')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///crm.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+CORS(app)  # Allows cross-origin requests from Wix
 
-db = SQLAlchemy(app)
+@app.route('/')
+def home():
+    return "✅ Flask backend is running!"
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
-    role = db.Column(db.String(20))
-    rep_notes = db.Column(db.Text)
+@app.route('/api/pop_order', methods=['POST'])
+def receive_order():
+    try:
+        data = request.get_json()
+        print("✅ Received order data:", data)
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        # You could add more logic here (e.g., save to database)
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        return jsonify({"success": True, "message": "Order received"})
+    except Exception as e:
+        print("❌ Error receiving order:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
 
-with app.app_context():
-    db.drop_all()
-    db.create_all()
-    print("✅ Tables dropped and recreated using SQLAlchemy ORM.")
-
-
-@app.route("/")
-def root():
-    return redirect(url_for("login"))
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        user = User.query.filter_by(username=request.form["username"]).first()
-        if user and user.check_password(request.form["password"]):
-            session["user_id"] = user.id
-            session["role"] = user.role
-            return redirect(url_for("dashboard"))
-        flash("Invalid credentials")
-        return redirect(url_for("login"))
-    return render_template("login.html")
-
-@app.route("/dashboard")
-def dashboard():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-    return f"Welcome to the dashboard, {session.get('role')}!"
-
-@app.route("/add_test_users")
-def add_test_users():
-    users = [
-        {"username": "polina", "password": "polinapass", "role": "admin"},
-        {"username": "tanya", "password": "tanyapass", "role": "creative"},
-        {"username": "rory", "password": "rorypass", "role": "sales"},
-    ]
-    for u in users:
-        if not User.query.filter_by(username=u["username"]).first():
-            user = User(username=u["username"], role=u["role"], rep_notes="")
-            user.set_password(u["password"])
-            db.session.add(user)
-    db.session.commit()
-    return "✅ Test users created."
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)

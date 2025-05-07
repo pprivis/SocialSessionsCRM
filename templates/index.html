@@ -31,6 +31,7 @@
       {% if role == 'admin' %}
       <a href="/export" class="text-sm text-purple-700 hover:underline">Export CSV</a>
       <a href="/backup" class="text-sm text-purple-700 hover:underline">Download Backup</a>
+      <a href="{{ url_for('view_pop_items') }}" class="text-sm text-purple-700 hover:underline">View P.O.P. Orders</a>
       {% endif %}
       <a href="{{ url_for('logout') }}" class="text-sm text-red-600 hover:underline">Logout</a>
     </div>

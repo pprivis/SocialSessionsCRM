@@ -1,0 +1,6 @@
+@echo off
+cd /d "C:\Users\ppriv\OneDrive\Desktop\SS_CRM_FINAL_COMPLETE"
+call venv\Scripts\activate.bat
+start http://127.0.0.1:5000/admin/pop_orders
+python app.py
+pause
